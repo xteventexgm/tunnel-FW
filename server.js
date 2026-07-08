@@ -3,7 +3,7 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const app = express();
 
-const TARGET = "https://firewall-protocol.loca.lt"; // Tu subdominio en loca.lt
+const TARGET = " https://interapophyseal-contemningly-sherly.ngrok-free.dev"; // Tu subdominio en loca.lt
 
 // 1. Creamos una única instancia del proxy
 const apiProxy = createProxyMiddleware({
