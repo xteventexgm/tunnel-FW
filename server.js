@@ -3,37 +3,29 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 const app = express();
 
-const TARGET = " https://interapophyseal-contemningly-sherly.ngrok-free.dev"; // Tu subdominio en loca.lt
+// Cambia esto por tu URL de Ngrok o LocalTunnel real
+const TARGET = process.env.TARGET_URL || " https://interapophyseal-contemningly-sherly.ngrok-free.dev";
 
-// 1. Creamos una única instancia del proxy
+// 1. Crear una única instancia del proxy
 const apiProxy = createProxyMiddleware({
   target: TARGET,
   changeOrigin: true,
-  ws: true,              // Soporte WebSocket
-  secure: true,
+  ws: true,              // Habilita el soporte para WebSockets
+  secure: false,         // 'false' evita problemas de certificados SSL auto-firmados o mismatch
   xfwd: true,
-  // 2. INYECTAMOS LA CABECERA PARA SALTAR LA ADVERTENCIA DE LOCALTUNNEL
   onProxyReq: (proxyReq, req, res) => {
-    proxyReq.setHeader("bypass-tunnel-reminder", "true");
-    // Opcional: LocalTunnel a veces también revisa el User-Agent
-    proxyReq.setHeader("User-Agent", "Render-Relay"); 
-  },
-  onProxyReqWs: (proxyReq, req, socket, options, head) => {
-    proxyReq.setHeader("bypass-tunnel-reminder", "true");
-    proxyReq.setHeader("User-Agent", "Render-Relay");
+    // 2. Fundamental para Ngrok: Evitar la pantalla de advertencia en navegadores
+    proxyReq.setHeader('ngrok-skip-browser-warning', 'true');
+    proxyReq.setHeader('Bypass-Tunnel-Reminder', 'true');
   }
 });
 
-// 3. Usamos el proxy en Express
 app.use("/", apiProxy);
 
 const port = process.env.PORT || 3000;
-
 const server = app.listen(port, () => {
-  console.log(`Relay iniciado en puerto ${port} redirigiendo a ${TARGET}`);
+  console.log(`Relay iniciado en puerto ${port} apuntando a ${TARGET}`);
 });
 
-// 4. Habilitar WebSocket usando la MISMA instancia del proxy
-server.on("upgrade", (req, socket, head) => {
-  apiProxy.upgrade(req, socket, head);
-});
+// 3. Habilitar WebSockets correctamente reutilizando la misma instancia
+server.on("upgrade", apiProxy.upgrade);
